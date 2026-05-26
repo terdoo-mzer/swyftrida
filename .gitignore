@@ -1,0 +1,16 @@
+# macOS
+.DS_Store
+
+# Environment files - never committed
+.env
+*.env.local
+
+# Node
+node_modules/
+
+# Laravel
+/web/vendor/
+/web/node_modules/
+
+# Logs
+*.log
