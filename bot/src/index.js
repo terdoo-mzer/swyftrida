@@ -1,4 +1,5 @@
 import express from 'express';
+import redis from './config/redis.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -11,6 +12,7 @@ app.use(express.json({
     strict: true
 }));
 
+// health check endpoint
 app.get('/health', (req, res) => {
   return res.status(200).json({status: 'ok'});
 });
@@ -19,6 +21,7 @@ const server = app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
 
+// Process termination handling for graceful shutdown
 const gracefulShutdown = (signal) => {
   console.log(`Received ${signal}, starting graceful shutdown`)
 
@@ -27,6 +30,9 @@ const gracefulShutdown = (signal) => {
 
     // Close database connections
     // database.close()
+
+    // Close Redis conection
+    redis.quit();
 
     // Clean up temporary files
     // cleanup()
