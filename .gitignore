@@ -12,5 +12,9 @@ node_modules/
 /web/vendor/
 /web/node_modules/
 
+# bot
+/bot/node_modules
+/bot/.env
+
 # Logs
 *.log
