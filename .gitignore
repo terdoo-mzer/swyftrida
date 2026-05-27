@@ -16,5 +16,8 @@ node_modules/
 /bot/node_modules
 /bot/.env
 
+#docs
+docs/
+
 # Logs
 *.log
