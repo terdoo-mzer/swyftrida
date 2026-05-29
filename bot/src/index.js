@@ -2,6 +2,8 @@ import express from 'express';
 import redis from './config/redis.js';
 import dotenv from 'dotenv';
 
+import whatsAppRouter from './webhooks/whatsapp.js';
+
 dotenv.config();
 
 const app = express();
@@ -11,6 +13,10 @@ app.use(express.json({
      limit: '10mb',
     strict: true
 }));
+app.use(express.urlencoded({ extended: false }));
+
+// WhatsApp routes
+app.use('/whatsapp', whatsAppRouter);
 
 // health check endpoint
 app.get('/health', (req, res) => {
