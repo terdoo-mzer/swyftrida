@@ -15,6 +15,9 @@ class Admin extends Authenticatable
 {
       /** @use HasFactory<Admin> */
     use HasFactory, Notifiable;
+     protected $keyType = 'string';
+
+    public $incrementing = false;
 
     /**
      * Get the attributes that should be cast.
