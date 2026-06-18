@@ -28,7 +28,7 @@ class TripController extends Controller
      */
     public function store(Request $request)
     {
-        return "Trip stored successfully.";
+        dd($request->all());
     }
 
     /**

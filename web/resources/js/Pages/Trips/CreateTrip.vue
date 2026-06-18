@@ -1,6 +1,6 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 // One "trip" section's default shape — duplicated each time "Add trip" is clicked
@@ -13,16 +13,26 @@ const blankTrip = () => ({
     price: '',
 });
 
-// Starts with one trip section. "Add trip" pushes another blank one.
-// You'll wire up form submission yourself — this just manages the array.
-const trips = ref([blankTrip()]);
+
+const form = useForm({
+    trips: [blankTrip()],
+});
+
+const submit = () => {
+    form.post(route('trips.store'), {
+            onSuccess: () => {
+                form.trips = [blankTrip()]; // Reset to one blank trip after successful submission
+            },
+    })
+    //console.log('Submitting trips:', trips.value);
+}
 
 const addTrip = () => {
-    trips.value.push(blankTrip());
+    form.trips.push(blankTrip());
 };
 
 const removeTrip = (index) => {
-    trips.value.splice(index, 1);
+    form.trips.splice(index, 1);
 };
 </script>
 
@@ -31,16 +41,24 @@ const removeTrip = (index) => {
 
     <AuthenticatedLayout>
         <template #header>
-            <h2 class="text-xl font-semibold leading-tight text-gray-800">
-                Create Trip
-            </h2>
+               <div class="flex items-center justify-between">
+                <h2 class="text-xl font-semibold leading-tight text-gray-800">
+                    Create Trip
+                </h2>
+                <Link
+                    :href="route('dashboard')"
+                    class="text-sm text-gray-500 hover:text-gray-700"
+                >
+                    ← Back to Dashboard
+                </Link>
+            </div>
         </template>
 
         <div class="py-12">
             <div class="mx-auto max-w-4xl sm:px-6 lg:px-8">
                 <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg p-6">
 
-                    <form>
+                    <form @submit.prevent="submit">
                         <!--
                             EXTRACTION NOTE:
                             Each iteration of this v-for can later become its own
@@ -52,7 +70,7 @@ const removeTrip = (index) => {
                                      <TripFormSection v-for="(trip, index) in trips" ... />
                         -->
                         <div
-                            v-for="(trip, index) in trips"
+                            v-for="(trip, index) in form.trips"
                             :key="index"
                             class="border border-gray-200 rounded-lg p-4 mb-4"
                         >
@@ -61,7 +79,7 @@ const removeTrip = (index) => {
                                     Trip {{ index + 1 }}
                                 </h3>
                                 <button
-                                    v-if="trips.length > 1"
+                                    v-if="form.trips.length > 1"
                                     type="button"
                                     @click="removeTrip(index)"
                                     class="text-sm text-red-600 hover:text-red-800"
@@ -78,7 +96,7 @@ const removeTrip = (index) => {
                                     </label>
                                     <select
                                         :id="`origin-${index}`"
-                                        v-model="trip.origin"
+                                        v-model="form.trips[index].origin"
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500"
                                     >
                                         <option value="" disabled>Select origin</option>
@@ -94,7 +112,7 @@ const removeTrip = (index) => {
                                     </label>
                                     <select
                                         :id="`destination-${index}`"
-                                        v-model="trip.destination"
+                                        v-model="form.trips[index].destination"
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500"
                                     >
                                         <option value="" disabled>Select destination</option>
@@ -110,7 +128,7 @@ const removeTrip = (index) => {
                                     </label>
                                     <input
                                         :id="`departure_date-${index}`"
-                                        v-model="trip.departure_date"
+                                        v-model="form.trips[index].departure_date"
                                         type="date"
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500"
                                     />
@@ -123,7 +141,7 @@ const removeTrip = (index) => {
                                     </label>
                                     <input
                                         :id="`departure_time-${index}`"
-                                        v-model="trip.departure_time"
+                                        v-model="form.trips[index].departure_time"
                                         type="time"
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500"
                                     />
@@ -136,7 +154,7 @@ const removeTrip = (index) => {
                                     </label>
                                     <input
                                         :id="`capacity-${index}`"
-                                        v-model="trip.capacity"
+                                        v-model="form.trips[index].capacity"
                                         type="number"
                                         min="1"
                                         placeholder="e.g. 18"
@@ -151,7 +169,7 @@ const removeTrip = (index) => {
                                     </label>
                                     <input
                                         :id="`price-${index}`"
-                                        v-model="trip.price"
+                                        v-model="form.trips[index].price"
                                         type="number"
                                         min="0"
                                         step="0.01"
@@ -182,8 +200,9 @@ const removeTrip = (index) => {
                                 <button
                                     type="submit"
                                     class="inline-flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 w-full sm:w-auto"
+                                    :disabled="form.processing"
                                 >
-                                    Save {{ trips.length > 1 ? 'Trips' : 'Trip' }}
+                                    Save {{ form.trips.length > 1 ? 'Trips' : 'Trip' }}
                                 </button>
                             </div>
                         </div>
