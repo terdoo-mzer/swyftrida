@@ -24,7 +24,6 @@ const submit = () => {
                 form.trips = [blankTrip()]; // Reset to one blank trip after successful submission
             },
     })
-    //console.log('Submitting trips:', trips.value);
 }
 
 const addTrip = () => {
@@ -69,6 +68,9 @@ const removeTrip = (index) => {
                               4. Replace the block here with:
                                      <TripFormSection v-for="(trip, index) in trips" ... />
                         -->
+                          <div v-if="form.errors && form.errors.duplicateFormTripError" class="bg-red-700 text-white w-full text-sm mb-6 py-2 px-3 rounded">
+                                {{ form.errors.duplicateFormTripError }}    
+                        </div>
                         <div
                             v-for="(trip, index) in form.trips"
                             :key="index"
@@ -103,6 +105,10 @@ const removeTrip = (index) => {
                                         <option value="lagos">Lagos</option>
                                         <option value="abuja">Abuja</option>
                                     </select>
+                                       <div v-if="form.errors && form.errors[`trips.${index}.origin`]" class="text-red-500 text-sm">
+                                        {{ form.errors[`trips.${index}.origin`] }}
+                                    </div>
+                                    
                                 </div>
 
                                 <!-- Destination -->
@@ -119,6 +125,9 @@ const removeTrip = (index) => {
                                         <option value="lagos">Lagos</option>
                                         <option value="abuja">Abuja</option>
                                     </select>
+                                    <div v-if="form.errors && form.errors[`trips.${index}.destination`]" class="text-red-500 text-sm">
+                                        {{ form.errors[`trips.${index}.destination`] }}
+                                    </div>
                                 </div>
 
                                 <!-- Departure Date -->
@@ -132,6 +141,9 @@ const removeTrip = (index) => {
                                         type="date"
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500"
                                     />
+                                    <div v-if="form.errors && form.errors[`trips.${index}.departure_date`]" class="text-red-500 text-sm">
+                                        {{ form.errors[`trips.${index}.departure_date`] }}
+                                    </div>
                                 </div>
 
                                 <!-- Departure Time -->
@@ -145,6 +157,9 @@ const removeTrip = (index) => {
                                         type="time"
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500"
                                     />
+                                     <div v-if="form.errors && form.errors[`trips.${index}.departure_time`]" class="text-red-500 text-sm">
+                                        {{ form.errors[`trips.${index}.departure_time`] }}
+                                    </div>
                                 </div>
 
                                 <!-- Capacity -->
@@ -155,11 +170,14 @@ const removeTrip = (index) => {
                                     <input
                                         :id="`capacity-${index}`"
                                         v-model="form.trips[index].capacity"
-                                        type="number"
-                                        min="1"
+                                        type="text"
+                                        
                                         placeholder="e.g. 18"
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500"
                                     />
+                                    <div v-if="form.errors && form.errors[`trips.${index}.capacity`]" class="text-red-500 text-sm">
+                                        {{ form.errors[`trips.${index}.capacity`] }}
+                                    </div>
                                 </div>
 
                                 <!-- Price -->
@@ -176,8 +194,15 @@ const removeTrip = (index) => {
                                         placeholder="e.g. 25000"
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500"
                                     />
+                                     <div v-if="form.errors && form.errors[`trips.${index}.price`]" class="text-red-500 text-sm">
+                                        {{ form.errors[`trips.${index}.price`] }}
+                                    </div>
                                 </div>
+                             
                             </div>
+                                <div v-if="form.errors && form.errors[`trips.${index}`]" class="bg-red-700 text-white w-full text-sm mt-6 py-2 px-3 rounded">
+                                        {{ form.errors[`trips.${index}`] }}
+                                </div>
                         </div>
 
                         <!-- Add trip + actions -->

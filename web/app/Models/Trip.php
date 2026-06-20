@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['origin', 'destination', 'departure_time', 'capacity', 'price'])]
+#[Fillable(['origin', 'destination', 'departure_time', 'capacity', 'price', 'status'])]
 class Trip extends Model
 {
     protected $keyType = 'string';

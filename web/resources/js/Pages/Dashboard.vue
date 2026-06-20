@@ -17,11 +17,11 @@ const stats = ref({
 
 // Placeholder data — replace with props from controller later
 // e.g. defineProps({ trips: Array })
-const trips = ref([
-    { id: 'a1b2c3d4', origin: 'Lagos', destination: 'Abuja', departure_time: '2026-06-18 06:00', price: 25000, capacity: 18, booked_seats: 12 },
-    { id: 'e5f6g7h8', origin: 'Abuja', destination: 'Lagos', departure_time: '2026-06-18 09:30', price: 27000, capacity: 18, booked_seats: 18 },
-    { id: 'i9j0k1l2', origin: 'Lagos', destination: 'Abuja', departure_time: '2026-06-19 07:00', price: 25000, capacity: 14, booked_seats: 6 },
-]);
+// const trips = ref([
+//     { id: 'a1b2c3d4', origin: 'Lagos', destination: 'Abuja', departure_time: '2026-06-18 06:00', price: 25000, capacity: 18, booked_seats: 12 },
+//     { id: 'e5f6g7h8', origin: 'Abuja', destination: 'Lagos', departure_time: '2026-06-18 09:30', price: 27000, capacity: 18, booked_seats: 18 },
+//     { id: 'i9j0k1l2', origin: 'Lagos', destination: 'Abuja', departure_time: '2026-06-19 07:00', price: 25000, capacity: 14, booked_seats: 6 },
+// ]);
 
 const isFullyBooked = (trip) => trip.booked_seats >= trip.capacity;
 
@@ -38,6 +38,17 @@ const toggleMenu = (tripId) => {
 const closeMenu = () => {
     openMenuId.value = null;
 };
+
+defineProps({
+    trips: {
+        type: Array,
+        required: true,
+    },
+    stats: {
+        type: Object,
+        required: true,
+    },
+})
 </script>
 
 <template>

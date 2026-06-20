@@ -5,6 +5,7 @@ import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
+import FlashBanner from '@/Components/FlashBanner.vue';
 import { Link } from '@inertiajs/vue3';
 
 const showingNavigationDropdown = ref(false);
@@ -12,6 +13,8 @@ const showingNavigationDropdown = ref(false);
 
 <template>
     <div>
+        <!-- Flash Banner shows success and error messages sent from controllers-->
+        <FlashBanner />
         <div class="min-h-screen bg-gray-100 px-">
             <nav
                 class="border-b border-gray-100 bg-white"

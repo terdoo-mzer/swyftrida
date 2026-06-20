@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
+use App\Models\Trip;
+
 Route::get('/', function () { 
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
@@ -17,7 +19,9 @@ Route::get('/', function () {
 })->middleware('guest:admin');
 
 Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
+    return Inertia::render('Dashboard', [
+        'trips' => Trip::all(),
+    ]);
 })->middleware(['auth:admin'])->name('dashboard');
 
 Route::middleware(['auth:admin'])
