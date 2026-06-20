@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Http\Requests\TripCreationRequest;
 use App\Models\Trip;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
