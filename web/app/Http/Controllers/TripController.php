@@ -93,32 +93,37 @@ class TripController extends Controller
             throw ValidationException::withMessages($duplicateTripEntryErrors);
         }
 
-        // Insert the data right here
-        foreach ($validatedTripData['trips'] as $trip) {
-            // Use transactions to ensure data integrity and consitency between trips and seats
-            DB::transaction(function () use ($trip) {
-                
-                $tripModel = Trip::create([
-                    'origin' => $trip['origin'],
-                    'destination' => $trip['destination'],
-                    'departure_time' => \Carbon\Carbon::parse($trip['departure_date'] . ' ' . $trip['departure_time']),
-                    'capacity' => $trip['capacity'],
-                    'price' => $trip['price'],
-                    'status' => 'active',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                for($i=1;  $i <= (int) $trip['capacity']; $i++) {
-                    Seat::create([
-                        'trip_id' => $tripModel->id,
-                        'seat_number' => $i,
-                        'status' => 'available'
+        DB::transaction(function () use ($validatedTripData) {
+            try {
+                // Insert the data right here
+                foreach ($validatedTripData['trips'] as $trip) {
+                    $tripModel = Trip::create([
+                        'origin' => $trip['origin'],
+                        'destination' => $trip['destination'],
+                        'departure_time' => \Carbon\Carbon::parse($trip['departure_date'] . ' ' . $trip['departure_time']),
+                        'capacity' => $trip['capacity'],
+                        'price' => $trip['price'],
+                        'status' => 'active',
+                        'created_at' => now(),
+                        'updated_at' => now(),
                     ]);
-                }
-            });
-        }
 
+                    for ($i = 1; $i <= (int) $trip['capacity']; $i++) {
+                        Seat::create([
+                            'trip_id' => $tripModel->id,
+                            'seat_number' => $i,
+                            'status' => 'available'
+                        ]);
+                    }
+                }
+            } catch(\Throwable $e) {
+                Log::error('Trip creation failed', ['error' => $e->getMessage()]);
+
+                throw ValidationException::withMessages([
+                    'tripCreationError' => 'Something went wrong while creating the trip. Please try again.'
+                ]);
+            }
+        });
         // After successful insertion, return a success message or redirect as needed
         return redirect()->route('dashboard')->with('success', 'Trips created successfully!');
     }

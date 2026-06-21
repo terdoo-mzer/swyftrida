@@ -71,6 +71,9 @@ const removeTrip = (index) => {
                           <div v-if="form.errors && form.errors.duplicateFormTripError" class="bg-red-700 text-white w-full text-sm mb-6 py-2 px-3 rounded">
                                 {{ form.errors.duplicateFormTripError }}    
                         </div>
+                        <div v-if="form.errors && form.errors.tripCreationError" class="bg-red-700 text-white w-full text-sm mb-6 py-2 px-3 rounded">
+                                {{ form.errors.tripCreationError }}    
+                        </div>
                         <div
                             v-for="(trip, index) in form.trips"
                             :key="index"
