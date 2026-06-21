@@ -170,8 +170,8 @@ const removeTrip = (index) => {
                                     <input
                                         :id="`capacity-${index}`"
                                         v-model="form.trips[index].capacity"
-                                        type="text"
-                                        
+                                        type="number"
+                                        min="1"
                                         placeholder="e.g. 18"
                                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500"
                                     />

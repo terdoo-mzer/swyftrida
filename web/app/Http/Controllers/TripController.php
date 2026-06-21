@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Trip;
+use App\Models\Seat;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class TripController extends Controller
@@ -93,16 +95,28 @@ class TripController extends Controller
 
         // Insert the data right here
         foreach ($validatedTripData['trips'] as $trip) {
-            Trip::create([
-                'origin' => $trip['origin'],
-                'destination' => $trip['destination'],
-                'departure_time' => \Carbon\Carbon::parse($trip['departure_date'] . ' ' . $trip['departure_time']),
-                'capacity' => $trip['capacity'],
-                'price' => $trip['price'],
-                'status' => 'active',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            // Use transactions to ensure data integrity and consitency between trips and seats
+            DB::transaction(function () use ($trip) {
+                
+                $tripModel = Trip::create([
+                    'origin' => $trip['origin'],
+                    'destination' => $trip['destination'],
+                    'departure_time' => \Carbon\Carbon::parse($trip['departure_date'] . ' ' . $trip['departure_time']),
+                    'capacity' => $trip['capacity'],
+                    'price' => $trip['price'],
+                    'status' => 'active',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                for($i=1;  $i <= (int) $trip['capacity']; $i++) {
+                    Seat::create([
+                        'trip_id' => $tripModel->id,
+                        'seat_number' => $i,
+                        'status' => 'available'
+                    ]);
+                }
+            });
         }
 
         // After successful insertion, return a success message or redirect as needed
