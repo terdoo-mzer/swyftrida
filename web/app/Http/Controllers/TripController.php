@@ -57,75 +57,42 @@ class TripController extends Controller
             ]
         );
 
-        // Prevent deuplicate trips with same route and departure date & time
+        // Prevent duplicate trips with same route and departure date & time
         // Compare incoming multiple trips from the user, and check if there are any with the same route and departure date & time
-        if ($validatedTripData['trips'] && count($validatedTripData['trips']) > 1) {
-            $duplicateTripEntries = [];
-            foreach ($validatedTripData['trips'] as $trip) {
-                // Compose a unique trip key/entry
-                $tripKey = $trip['destination'] . '-' . $trip['departure_date'] . '-' . $trip['departure_time'];
-                if (isset($duplicateTripEntries[$tripKey])) {
-                    //dd($duplicateTripEntries);
-                    throw ValidationException::withMessages([
-                        'duplicateFormTripError' => 'Duplicate trips with the same destination and departure date & time are not allowed.',
-                    ]);
-                }
-                $duplicateTripEntries[$tripKey] = true;
-            }
-
-            // There will be no duplicates on the form at this point, so check the database for 
-            // duplicates at this point. You are reqired to loop the data array to perform this
-            $duplicateTripEntryErrors = [];
-            //$formattedDepartureTimeDate = \Carbon\Carbon::parse($trip['departure_date'] . ' ' . $trip['departure_time']);
-            foreach($validatedTripData['trips'] as $tripIndex => $value) {
-                $formattedDepartureTimeDate = \Carbon\Carbon::parse($value['departure_date'] . ' ' . $value['departure_time']);
-                if(
-                    DB::table('trips')
-                    ->where('destination', $value['destination'])
-                    ->where('departure_time', $formattedDepartureTimeDate)
-                    ->exists()
-                ){
-                    $duplicateTripEntryErrors["trips.$tripIndex"] = "A trip already exists with the same destination and departure time.";
-                }
-                 if (!empty($duplicateTripEntryErrors)) {
-                    //dd($duplicateTripEntryErrors);
-                    throw ValidationException::withMessages($duplicateTripEntryErrors);
-                }
-            }
-
-            // Insert the data right here
-            foreach ($validatedTripData['trips'] as $trip) {
-                DB::table('trips')->insert([
-                    'origin' => $trip['origin'],
-                    'destination' => $trip['destination'],
-                    'departure_time' => \Carbon\Carbon::parse($trip['departure_date'] . ' ' . $trip['departure_time']),
-                    'capacity' => $trip['capacity'],
-                    'price' => $trip['price'],
-                    'status' => 'active',
-                    'created_at' => now(),
-                    'updated_at' => now(),
+        $duplicateTripEntries = [];
+        foreach ($validatedTripData['trips'] as $trip) {
+            // Compose a unique trip key/entry
+            $tripKey = $trip['destination'] . '-' . $trip['departure_date'] . '-' . $trip['departure_time'];
+            if (isset($duplicateTripEntries[$tripKey])) {
+                throw ValidationException::withMessages([
+                    'duplicateFormTripError' => 'Duplicate trips with the same destination and departure date & time are not allowed.',
                 ]);
             }
+            $duplicateTripEntries[$tripKey] = true;
+        }
 
-            // After successful insertion, return a success message or redirect as needed
-            return redirect()->route('dashboard')->with('success', 'Trips created successfully!');
-        } else {
-            // Chek if the single trip already exists in the database
-            $trip = $validatedTripData['trips'][0];
-            $formattedDepartureTimeDate = \Carbon\Carbon::parse($trip['departure_date'] . ' ' . $trip['departure_time']);
+        // There will be no duplicates on the form at this point, so check the database for 
+        // duplicates at this point. You are reqired to loop the data array to perform this
+        $duplicateTripEntryErrors = [];
+        //$formattedDepartureTimeDate = \Carbon\Carbon::parse($trip['departure_date'] . ' ' . $trip['departure_time']);
+        foreach ($validatedTripData['trips'] as $tripIndex => $value) {
+            $formattedDepartureTimeDate = \Carbon\Carbon::parse($value['departure_date'] . ' ' . $value['departure_time']);
             if (
                 DB::table('trips')
-                ->where('destination', $trip['destination'])
+                ->where('destination', $value['destination'])
                 ->where('departure_time', $formattedDepartureTimeDate)
                 ->exists()
             ) {
-                //dd('A trip already exists on this route and departure.');
-                throw ValidationException::withMessages([
-                    'trips.0' => 'This trip already exists. Please change the destination and departure time.',
-                ]); 
-                
+                $duplicateTripEntryErrors["trips.$tripIndex"] = "A trip already exists with the same destination and departure time.";
             }
+        }
+        if (!empty($duplicateTripEntryErrors)) {
+            //dd($duplicateTripEntryErrors);
+            throw ValidationException::withMessages($duplicateTripEntryErrors);
+        }
 
+        // Insert the data right here
+        foreach ($validatedTripData['trips'] as $trip) {
             Trip::create([
                 'origin' => $trip['origin'],
                 'destination' => $trip['destination'],
@@ -136,9 +103,10 @@ class TripController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-            return redirect()->route('dashboard')->with('success', 'Trip(s) created successfully!');
-            
         }
+
+        // After successful insertion, return a success message or redirect as needed
+        return redirect()->route('dashboard')->with('success', 'Trips created successfully!');
     }
 
     /**
