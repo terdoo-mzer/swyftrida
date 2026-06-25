@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\concerns\HasUuids;
 
 #[Fillable(['trip_id', 'seat_number', 'status'])]
-#[Table(key: 'uuid', keyType: 'string', incrementing: false)]
+#[Table(key: 'id', keyType: 'string', incrementing: false)]
 class Seat extends Model
 {
     use HasUuids;
@@ -24,15 +24,6 @@ class Seat extends Model
             'trip_id' => 'string',
             'seat_number' => 'string',
         ];
-    }
-     /**
-     * Get the columns that should receive a unique identifier.
-     *
-     * @return array<int, string>
-     */
-    public function uniqueIds(): array
-    {
-        return ['id'];
     }
 
 }

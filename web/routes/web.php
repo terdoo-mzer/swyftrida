@@ -18,11 +18,7 @@ Route::get('/', function () {
     ]);
 })->middleware('guest:admin');
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard', [
-        'trips' => Trip::all(),
-    ]);
-})->middleware(['auth:admin'])->name('dashboard');
+Route::get('/dashboard', [TripController::class, 'index'])->middleware(['auth:admin'])->name('dashboard');
 
 Route::middleware(['auth:admin'])
 ->group(function () {

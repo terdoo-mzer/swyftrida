@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Trip;
-use App\Models\Seat;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Database\Eloquent\Builder;
 use Inertia\Inertia;
+use App\Models\Trip;
+use App\Models\Seat;
+use App\Models\Booking;
 
 class TripController extends Controller
 {
@@ -17,7 +19,18 @@ class TripController extends Controller
      */
     public function index()
     {
-        return "All trips are displayed here.";
+        $trips = Trip::withCount(['bookings as booked_seats' => function (Builder $query) {
+            $query->where('payment_status', 'paid');
+        }])
+            ->withSum(['bookings as revenue' => function (Builder $query) {
+                $query->where('payment_status', 'paid');
+            }], 'amount_paid')
+            ->orderBy('departure_time', 'asc')
+            ->get();
+            
+        return Inertia::render('Dashboard', [
+            'trips' => $trips,
+        ]);
     }
 
     /**
@@ -116,7 +129,7 @@ class TripController extends Controller
                         ]);
                     }
                 }
-            } catch(\Throwable $e) {
+            } catch (\Throwable $e) {
                 Log::error('Trip creation failed', ['error' => $e->getMessage()]);
 
                 throw ValidationException::withMessages([
@@ -131,9 +144,22 @@ class TripController extends Controller
     /**
      * Display a specific trip.
      */
-    public function show(string $id)
+    public function show(Trip $trip)
     {
-        return Inertia::render('Trips/TripDetails', ['tripId' => $id]);
+
+        $bookingsData = Booking::where('trip_id', $trip->id)
+            ->with(['user', 'seat'])
+            ->get();
+
+        $revenue = $bookingsData->filter(function ($value, $key) {
+            return $value['payment_status'] === 'paid';
+        })->sum('amount_paid');
+
+        return Inertia::render('Trips/TripDetails', [
+            'trip' => $trip,
+            'bookings' => $bookingsData,
+            'revenue' => $revenue
+        ]);
     }
 
     /**

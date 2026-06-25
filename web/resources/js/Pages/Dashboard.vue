@@ -3,6 +3,20 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import { formatDate, formatPrice } from '@/utilities/helpers';
+
+const {trips} = defineProps({
+    trips: {
+        type: Array,
+        required: true,
+    },
+    stats: {
+        type: Object,
+        required: true,
+    },
+})
+
+console.table(trips)
 
 const search = ref('');
 
@@ -15,18 +29,7 @@ const stats = ref({
     fullyBookedCount: 1,
 });
 
-// Placeholder data — replace with props from controller later
-// e.g. defineProps({ trips: Array })
-// const trips = ref([
-//     { id: 'a1b2c3d4', origin: 'Lagos', destination: 'Abuja', departure_time: '2026-06-18 06:00', price: 25000, capacity: 18, booked_seats: 12 },
-//     { id: 'e5f6g7h8', origin: 'Abuja', destination: 'Lagos', departure_time: '2026-06-18 09:30', price: 27000, capacity: 18, booked_seats: 18 },
-//     { id: 'i9j0k1l2', origin: 'Lagos', destination: 'Abuja', departure_time: '2026-06-19 07:00', price: 25000, capacity: 14, booked_seats: 6 },
-// ]);
-
 const isFullyBooked = (trip) => trip.booked_seats >= trip.capacity;
-
-const formatPrice = (price) =>
-    new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(price);
 
 // Tracks which row's action menu is open — only one open at a time
 const openMenuId = ref(null);
@@ -38,17 +41,6 @@ const toggleMenu = (tripId) => {
 const closeMenu = () => {
     openMenuId.value = null;
 };
-
-defineProps({
-    trips: {
-        type: Array,
-        required: true,
-    },
-    stats: {
-        type: Object,
-        required: true,
-    },
-})
 </script>
 
 <template>
@@ -62,17 +54,8 @@ defineProps({
         </template>
 
         <div class="py-12">
+            <!-- Stats -->
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-
-                <!--
-                    EXTRACTION NOTE (KPI cards):
-                    This grid can later move into its own component, e.g. DashboardStats.vue
-                    1. Create resources/js/Components/DashboardStats.vue
-                    2. Move this <div class="grid ..."> block into its <template>
-                    3. In its <script setup>, add: defineProps({ stats: { type: Object, required: true } })
-                    4. Back here, replace the block with: <DashboardStats :stats="stats" />
-                        where `stats` comes from defineProps in Dashboard.vue (passed by the controller)
-                -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
                     <div class="bg-white shadow-sm rounded-lg p-4">
                         <p class="text-xs font-medium text-gray-500">Total Trips</p>
@@ -91,31 +74,10 @@ defineProps({
                         <p class="mt-1 text-2xl font-semibold text-gray-800">{{ stats.fullyBookedCount }}</p>
                     </div>
                 </div>
-
-                <!-- existing toolbar + table card goes here, unchanged except below -->
-                <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg p-6" @click="closeMenu">
-                    ...
-                </div>
             </div>
-        </div>
 
-        <div class="py-12">
+            <!-- Trips Table -->
             <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-                <!--
-                    EXTRACTION NOTE (whole page):
-                    Everything inside this outer card — toolbar + table — can move into
-                    a single <TripsTable /> component later. To do that:
-                      1. Create resources/js/Components/TripsTable.vue
-                      2. Move the <div class="overflow-hidden bg-white ..."> block (toolbar + table)
-                         into that component's <template>
-                      3. Move `search`, `trips`, `openMenuId`, and the helper functions
-                         (isFullyBooked, formatPrice, toggleMenu, closeMenu) into TripsTable's <script setup>
-                      4. Replace the placeholder `trips` ref with:
-                             defineProps({ trips: { type: Array, required: true } })
-                      5. Back in Dashboard.vue, replace the whole block with:
-                             <TripsTable :trips="trips" />
-                         where `trips` comes from defineProps in Dashboard.vue (passed by the controller)
-                -->
                 <div
                     class="overflow-hidden bg-white shadow-sm sm:rounded-lg p-6"
                     @click="closeMenu"
@@ -147,20 +109,24 @@ defineProps({
                                     <th class="px-4 py-2 text-left font-medium text-gray-500">Departure</th>
                                     <th class="px-4 py-2 text-right font-medium text-gray-500">Price</th>
                                     <th class="px-4 py-2 text-right font-medium text-gray-500">Capacity</th>
-                                    <th class="px-4 py-2 text-right font-medium text-gray-500">Booked</th>
+                                    <th class="px-4 py-2 text-right font-medium text-gray-500">Booked Seats</th>
+                                    <th class="px-4 py-2 text-right font-medium text-gray-500">Available Seats</th>
                                     <th class="px-4 py-2 text-center font-medium text-gray-500">Status</th>
+                                    <th class="px-4 py-2 text-center font-medium text-gray-500">Revenue</th>
                                     <!-- Actions column header — intentionally blank -->
                                     <th class="px-4 py-2 w-10"></th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100">
                                 <tr v-for="trip in trips" :key="trip.id">
-                                    <td class="px-4 py-2 font-mono text-gray-500">{{ trip.id }}</td>
+                                    <td class="px-4 py-2 font-mono text-gray-500">{{ trip.id.split("-")[0] }}...</td>
                                     <td class="px-4 py-2 font-medium text-gray-800">{{ trip.origin }} → {{ trip.destination }}</td>
-                                    <td class="px-4 py-2 text-gray-500">{{ trip.departure_time }}</td>
+                                    <td class="px-4 py-2 text-gray-500">{{ formatDate(trip.departure_time) }}</td>
                                     <td class="px-4 py-2 text-right">{{ formatPrice(trip.price) }}</td>
                                     <td class="px-4 py-2 text-right">{{ trip.capacity }}</td>
                                     <td class="px-4 py-2 text-right">{{ trip.booked_seats }}</td>
+                                    <td class="px-4 py-2 text-right">{{ trip.capacity - trip.booked_seats }}</td>
+                                    
                                     <td class="px-4 py-2 text-center">
                                         <span
                                             class="inline-block px-2 py-0.5 rounded-md text-xs font-medium"
@@ -171,6 +137,7 @@ defineProps({
                                             {{ isFullyBooked(trip) ? 'Fully Booked' : 'Available' }}
                                         </span>
                                     </td>
+                                    <td class="px-4 py-2 text-right">{{ formatPrice(trip.revenue) }}</td>
 
                                     <!-- Row actions -->
                                     <td class="px-4 py-2 text-center relative">
@@ -241,5 +208,6 @@ defineProps({
                 </div>
             </div>
         </div>
+
     </AuthenticatedLayout>
 </template>
