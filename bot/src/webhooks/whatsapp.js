@@ -8,6 +8,8 @@ const { MessagingResponse } = twilio.twiml;
 
 
 router.post('/', async (req, res) => {
+
+  console.log('Received WhatsApp message:', req.body);
   
   const {Body, From} = req.body;
 
