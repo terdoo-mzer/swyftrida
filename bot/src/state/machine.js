@@ -1,4 +1,5 @@
 import { prisma } from "../config/db.js";
+import { randomUUID } from "node:crypto";
 import {
   getSession,
   createSession,
@@ -64,10 +65,10 @@ export const handleMessage = async (from, body) => {
             status: "active",
             departure_time: { gt: new Date(Date.now() + 2 * 60 * 60 * 1000) },
             seats: {
-                some: {
-                    status: 'available'
-                }
-            }
+              some: {
+                status: "available",
+              },
+            },
           },
         });
 
@@ -111,7 +112,7 @@ export const handleMessage = async (from, body) => {
         const availableSeats = await prisma.seats.findMany({
           where: {
             trip_id: selectedTrip.id,
-            status: 'available'
+            status: "available",
           },
         });
         //console.log(`Here are the availabale seats: ${availableSeats}`);
@@ -123,7 +124,9 @@ export const handleMessage = async (from, body) => {
 
         let formattedAvailableSeats = [];
         availableSeats.forEach((seat, index) => {
-          formattedAvailableSeats.push(`[${index+1}] Seat ${seat.seat_number}`);
+          formattedAvailableSeats.push(
+            `[${index + 1}] Seat ${seat.seat_number}`,
+          );
         });
         // Update session
         await updateSession(from, {
@@ -145,8 +148,86 @@ export const handleMessage = async (from, body) => {
           return `Here are the available seats for the selected trip to ${session.destination}. Pick any seat to continue:\n${session.formattedSeats.join("\n")}\n${MENU_HINT}`;
         }
 
-        // Start transaction here
+        try {
+          // Start transaction here
+          const booking = await prisma.$transaction(async (tx) => {
+            const seats =
+              await tx.$queryRaw`SELECT * FROM seats WHERE id = ${session.seats[validatedSeatSelection - 1].id} FOR UPDATE`;
+            const seat = seats[0];
 
+            if (seat.status !== "available") throw new Error("SEAT_TAKEN");
+            // Retrieve the current user
+            const user = await tx.users.findUnique({
+              where: { phone: stripWhatsAppNumber(from) },
+            });
+            // TODO
+            // hold seat at this point
+            await tx.seats.update({
+              where: { id: session.seats[validatedSeatSelection - 1].id },
+              data: {
+                status: "held",
+              },
+            });
+            // Write the seat to the bookings table
+            // We need to also determine where and when payments will be created,
+            const newBooking = await tx.bookings.create({
+              data: {
+                user_id: user.id,
+                trip_id: session.tripId,
+                seat_id: session.seats[validatedSeatSelection - 1].id,
+                payment_status: "pending",
+                payment_ref: randomUUID(), // Random Hardcoded payment ref to be replaced later with FLW ref
+                payment_customer_id: randomUUID(),
+                virtual_account_number: "1234567890",
+                expires_at: new Date(Date.now() + 15 * 60 * 1000), // Hold for 15 minutes
+              },
+            });
+            return newBooking;
+          });
+
+          await updateSession(from, {
+            step: "AWAITING_PAYMENT",
+            bookingId: booking.id,
+          });
+          return `Your selected seat ${session.seats[validatedSeatSelection - 1].seat_number} has been reserved for you temporarily.\nKindly pay promptly to the listed account number in the next 15 minutes to permanently reserve the seat.\nAccount Number: 0106462561\nAccount Name: Swftrida\nAfter paying to the account, please wait to receive your ticket in the chat.`;
+        } catch (e) {
+          if (e.message === "SEAT_TAKEN") {
+            // We need to refetech available seats from the DB an rerender since the user selected seat was taken,
+            // and other seats might have been taken since the process.
+            const availableSeats = await prisma.seats.findMany({
+              where: {
+                trip_id: session.tripId, // We need to get trip id here
+                status: "available",
+              },
+            });
+
+            //console.log(`Here are the availabale seats: ${availableSeats}`);
+            // If no trips available, return an appropriate response to the user
+            if (availableSeats.length === 0) {
+              clearSession(from);
+              return `We are sincerely sorry. This trip to ${session.destination} is currently filled up. Please check back later\n${MENU_HINT}`;
+            }
+
+            let formattedAvailableSeats = [];
+            availableSeats.forEach((seat, index) => {
+              formattedAvailableSeats.push(
+                `[${index + 1}] Seat ${seat.seat_number}`,
+              );
+            });
+            // Update session
+            await updateSession(from, {
+              step: "AWAITING_SEAT_SELECTION",
+              seats: availableSeats,
+              tripId: session.tripId,
+              formattedSeats: formattedAvailableSeats,
+            });
+
+            return `Sorry, that seat was just taken. Please pick another:\n${formattedAvailableSeats.join("\n")}`;
+          } else {
+            console.error("Transaction error:", e); // ← see the real error
+            return `Something went wrong. Please try again.\n${MENU_HINT}`;
+          }
+        }
       }
     }
     return;
