@@ -5,8 +5,11 @@
  * This implementation is 'lazy' — it only requests a new token when the current one
  * is missing or expired, rather than refreshing on a fixed schedule.
  *
- * NOTE: This version does not yet handle concurrent calls arriving before a token
- * exists (see request-coalescing / single-flight pattern — to be added separately).
+ * This class futher implements a Single Flight Pattern (SFP) to avoid making multiple 
+ * concurrent token requests when the cached token is missing or expired. 
+ * In a concurrent requests scenario where a token is expired or not existing, and requiring 
+ * a new token to be requested, only the one request proceeds to request for the token,
+ * while the rest `wait` for the network request to be completed, and a token handed to them.
  */
 // import dotenv from "dotenv";
 const TOKEN_EXPIRY_BUFFER_SECONDS = 60; // refresh this many seconds before actual expiry
