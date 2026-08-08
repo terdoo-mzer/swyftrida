@@ -11,10 +11,9 @@
  * a new token to be requested, only the one request proceeds to request for the token,
  * while the rest `wait` for the network request to be completed, and a token handed to them.
  */
-// import dotenv from "dotenv";
+
 const TOKEN_EXPIRY_BUFFER_SECONDS = 60; // refresh this many seconds before actual expiry
 
-// dotenv.config();
 
 class FlutterwaveClient {
   #accessToken = null;
