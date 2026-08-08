@@ -12,9 +12,6 @@
  * while the rest `wait` for the network request to be completed, and a token handed to them.
  */
 
-const TOKEN_EXPIRY_BUFFER_SECONDS = 60; // refresh this many seconds before actual expiry
-
-
 class FlutterwaveClient {
   #accessToken = null;
   #tokenExpiresAt = 0; // absolute timestamp (ms since epoch), not a duration
@@ -44,7 +41,7 @@ class FlutterwaveClient {
 
     this.#accessToken = data.access_token;
     this.#tokenExpiresAt =
-      Date.now() + (data.expires_in - TOKEN_EXPIRY_BUFFER_SECONDS) * 1000;
+      Date.now() + (data.expires_in - process.env.TOKEN_EXPIRY_BUFFER_SECONDS) * 1000;
 
     console.log("Flutterwave: new token generated");
     return this.#accessToken;
