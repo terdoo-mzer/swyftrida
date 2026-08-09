@@ -12,6 +12,7 @@ import {
   MENU_HINT,
   formatDate,
 } from "../utils/helpers.js";
+import initiatePayment from '../../src/services/payments/initiatePayment.js'
 
 export const handleMessage = async (from, body) => {
   // TODO(Terdoo) Check if user wants to return to main menu by sending 'MENU'
@@ -189,6 +190,7 @@ export const handleMessage = async (from, body) => {
             step: "AWAITING_PAYMENT",
             bookingId: booking.id,
           });
+          initiatePayment(from, );
           return `Your selected seat ${session.seats[validatedSeatSelection - 1].seat_number} has been reserved for you temporarily.\nKindly pay promptly to the listed account number in the next 15 minutes to permanently reserve the seat.\nAccount Number: 0106462561\nAccount Name: Swftrida\nAfter paying to the account, please wait to receive your ticket in the chat.`;
         } catch (e) {
           if (e.message === "SEAT_TAKEN") {

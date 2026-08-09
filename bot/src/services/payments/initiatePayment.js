@@ -4,9 +4,8 @@ import whatsappMessage from "../notifications/whatsappMessage.js";
 
 const customerData = {
     bookingRef: "189a9b33-9c11-425b-9edd-44e49da53e9d",
-    // pass the amount of the booking via the caller
-    // pass the customer phone via caller
-    // 
+    amount: 50,
+    phone: '+2348064901390',
     name: {
         first: "Jin",
         last: "Jin"
@@ -28,5 +27,7 @@ const initiatePayment = async (customerData) => {
     Kindly note that this account will be valid only for 30 minutes`
     whatsappMessage(to, message)
 }
+
+export default initiatePayment;
 
 initiatePayment(customerData);

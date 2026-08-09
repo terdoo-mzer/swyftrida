@@ -1,5 +1,5 @@
 // import dotenv from "dotenv";
-import {prisma} from "../../config/db.js"
+import { prisma } from "../../config/db.js";
 import { flutterwaveClient } from "./flutterwaveClient.js";
 
 // dotenv.config();
@@ -22,36 +22,47 @@ const createCustomer = async (customerData) => {
     throw new Error("Invalid customer data. Name and email are required.");
   }
 
+  try {
+    // Create User
+    const response = await fetch(`${process.env.FLW_BASE_URL}/customers`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${await flutterwaveClient.getToken()}`,
+        "X-Idempotency-Key": customerData.bookingRef,
+      },
+      body: JSON.stringify(customerData),
+    });
 
-  // Create User
-  const response = await fetch(`${process.env.FLW_BASE_URL}/customers`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-      "Authorization": `Bearer ${await flutterwaveClient.getToken()}`,
-      "X-Idempotency-Key": customerData.bookingRef,
-    },
-    body: JSON.stringify(customerData),
-  });
+    if (!response.ok) {
+      console.error(
+        "Failed to create customer in Flutterwave:",
+        response,
+        response.status,
+        response.statusText,
+      );
+      throw new Error(
+        "Failed to create customer in Flutterwave:" + response.statusText,
+      );
+    }
 
-  if (!response.ok) {
-    console.error("Failed to create customer in Flutterwave:", response,  response.status, response.statusText);
-    throw new Error(
-      "Failed to create customer in Flutterwave:" + response.statusText,
+    const data = await response.json();
+    console.log("Customer created in Flutterwave:", data);
+    // Update the 'payment_customer_id' column in the 'bookings' table with the returned customer ID
+    const updateBookings = await prisma.bookings.update({
+      where: { id: customerData.bookingRef },
+      data: { payment_customer_id: data.data.id },
+    });
+
+    console.log(
+      "Updated booking with Flutterwave customer ID:",
+      updateBookings,
     );
+    return data; // Return created customer object
+  } catch (err) {
+    console.log(err)
   }
-
-  const data = await response.json();
-  console.log("Customer created in Flutterwave:", data);
-  // Update the 'payment_customer_id' column in the 'bookings' table with the returned customer ID
-  const updateBookings = await prisma.bookings.update({
-    where: {id: customerData.bookingRef},
-    data: {payment_customer_id: data.data.id}
-  });
-
-  console.log("Updated booking with Flutterwave customer ID:", updateBookings);
-  return data; // Return created customer object
 };
 
 export default createCustomer;

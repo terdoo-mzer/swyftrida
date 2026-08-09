@@ -5,9 +5,9 @@
  * This implementation is 'lazy' — it only requests a new token when the current one
  * is missing or expired, rather than refreshing on a fixed schedule.
  *
- * This class futher implements a Single Flight Pattern (SFP) to avoid making multiple 
- * concurrent token requests when the cached token is missing or expired. 
- * In a concurrent requests scenario where a token is expired or not existing, and requiring 
+ * This class futher implements a Single Flight Pattern (SFP) to avoid making multiple
+ * concurrent token requests when the cached token is missing or expired.
+ * In a concurrent requests scenario where a token is expired or not existing, and requiring
  * a new token to be requested, only the one request proceeds to request for the token,
  * while the rest `wait` for the network request to be completed, and a token handed to them.
  */
@@ -18,33 +18,38 @@ class FlutterwaveClient {
   #pendingTokenRequest = null;
 
   #requestAuthToken = async () => {
-    const response = await fetch(process.env.FLW_TOKEN_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        client_id: process.env.FLW_CLIENT_ID,
-        client_secret: process.env.FLW_CLIENT_SECRET,
-        grant_type: "client_credentials",
-      }),
-    });
+    try {
+      const response = await fetch(process.env.FLW_TOKEN_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          client_id: process.env.FLW_CLIENT_ID,
+          client_secret: process.env.FLW_CLIENT_SECRET,
+          grant_type: "client_credentials",
+        }),
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(
-        "Flutterwave authentication token request failed: " +
-          data.error_description,
-      );
+      if (!response.ok) {
+        throw new Error(
+          "Flutterwave authentication token request failed: " +
+            data.error_description,
+        );
+      }
+
+      this.#accessToken = data.access_token;
+      this.#tokenExpiresAt =
+        Date.now() +
+        (data.expires_in - process.env.TOKEN_EXPIRY_BUFFER_SECONDS) * 1000;
+
+      console.log("Flutterwave: new token generated");
+      return this.#accessToken;
+    } catch (err) {
+      console.log(err);
     }
-
-    this.#accessToken = data.access_token;
-    this.#tokenExpiresAt =
-      Date.now() + (data.expires_in - process.env.TOKEN_EXPIRY_BUFFER_SECONDS) * 1000;
-
-    console.log("Flutterwave: new token generated");
-    return this.#accessToken;
   };
 
   #isTokenValid = () => {
@@ -61,16 +66,16 @@ class FlutterwaveClient {
       console.log("Flutterwave: using existing token");
       return this.#accessToken;
     }
-    if(this.#pendingTokenRequest) {
+    if (this.#pendingTokenRequest) {
       console.log("Flutterwave: waiting for pending token request");
       return this.#pendingTokenRequest;
     }
 
     this.#pendingTokenRequest = this.#requestAuthToken();
     try {
-        return await this.#pendingTokenRequest;
+      return await this.#pendingTokenRequest;
     } finally {
-        this.#pendingTokenRequest = null;
+      this.#pendingTokenRequest = null;
     }
   };
 }
