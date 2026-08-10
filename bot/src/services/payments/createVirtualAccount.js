@@ -4,20 +4,20 @@ import { flutterwaveClient } from "./FlutterwaveClient.js";
 
 // dotenv.config();
 
-const createVirtualAccount = async (customerData) => {
-  if (!customerData.ref || !customerData.data.id) {
+const createVirtualAccount = async ({ref, customerId, amount}) => {
+  if (!ref || !customerId) {
     throw new Error("Missing reference number and/or customer id");
   }
 
   const body = {
-    reference: customerData.ref,
-    customer_id: customerData.data.id,
-    expiry: 600, // 15 minutes in seconds
+    reference: ref,
+    customer_id: customerId,
+    expiry: process.env.ACCOUNT_EXPIRY, // 15 minutes in seconds
     amount: 1500,
-    bank_code: "090567",
+    bank_code: process.env.BANK_CODE,
     currency: "NGN",
-    account_type: "dynamic",
-    narration: `payment on Swiftride by ${customerData.data.name.first} ${customerData.data.name.last}`,
+    account_type: process.env.ACCOUNT_TYPE,
+    narration: `payment on Swiftride`,
   };
 
   try {
@@ -29,7 +29,7 @@ const createVirtualAccount = async (customerData) => {
           "Content-Type": "application/json",
           Accept: "application/json",
           Authorization: `Bearer ${await flutterwaveClient.getToken()}`,
-          "X-Idempotency-Key": customerData.ref,
+          "X-Idempotency-Key": ref,
         },
         body: JSON.stringify(body),
       },

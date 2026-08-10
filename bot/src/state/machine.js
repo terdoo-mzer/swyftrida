@@ -12,7 +12,7 @@ import {
   MENU_HINT,
   formatDate,
 } from "../utils/helpers.js";
-import initiatePayment from '../../src/services/payments/initiatePayment.js'
+import initiatePayment from "../../src/services/payments/initiatePayment.js";
 
 export const handleMessage = async (from, body) => {
   // TODO(Terdoo) Check if user wants to return to main menu by sending 'MENU'
@@ -34,6 +34,7 @@ export const handleMessage = async (from, body) => {
         const user = await prisma.users.create({
           data: {
             name: body,
+            email: `${stripWhatsAppNumber(from)}@users.swiftride.com`,
             phone: stripWhatsAppNumber(from),
             status: "guest",
           },
@@ -134,6 +135,7 @@ export const handleMessage = async (from, body) => {
           step: "AWAITING_SEAT_SELECTION",
           seats: availableSeats,
           tripId: selectedTrip.id,
+          tripPrice: selectedTrip.price,
           formattedSeats: formattedAvailableSeats,
         });
         return `Here are the available seats for the selected trip to ${session.destination}. Pick any seat to continue:\n${formattedAvailableSeats.join("\n")}\n${MENU_HINT}`;
@@ -178,20 +180,23 @@ export const handleMessage = async (from, body) => {
                 seat_id: session.seats[validatedSeatSelection - 1].id,
                 payment_status: "pending",
                 payment_ref: randomUUID(), // Random Hardcoded payment ref to be replaced later with FLW ref
-                payment_customer_id: randomUUID(),
-                virtual_account_number: "1234567890",
                 expires_at: new Date(Date.now() + 15 * 60 * 1000), // Hold for 15 minutes
               },
             });
-            return newBooking;
+            return { newBooking, user };
           });
 
           await updateSession(from, {
             step: "AWAITING_PAYMENT",
-            bookingId: booking.id,
+            bookingId: booking.newBooking.id,
           });
-          initiatePayment(from, );
-          return `Your selected seat ${session.seats[validatedSeatSelection - 1].seat_number} has been reserved for you temporarily.\nKindly pay promptly to the listed account number in the next 15 minutes to permanently reserve the seat.\nAccount Number: 0106462561\nAccount Name: Swftrida\nAfter paying to the account, please wait to receive your ticket in the chat.`;
+          initiatePayment({
+            bookingRef: booking.newBooking.payment_ref,
+            amount: `₦${session.tripPrice}`, // Need to find a way to write the selected trip amount to the session and pick it for this field
+            customer: booking.user
+          });
+          console.log(JSON.stringify(session, null, 2));
+          return `Your selected seat ${session.seats[validatedSeatSelection - 1].seat_number} has been reserved for you temporarily.\nPlease wait to recieve an account number to pay the sum of ₦${session.tripPrice} to get your travel ticket.`;
         } catch (e) {
           if (e.message === "SEAT_TAKEN") {
             // We need to refetech available seats from the DB an rerender since the user selected seat was taken,

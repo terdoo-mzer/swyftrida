@@ -17,12 +17,20 @@ import { flutterwaveClient } from "./flutterwaveClient.js";
  */
 
 const createCustomer = async (customerData) => {
+    console.log(customerData)
   // validate customerData object to ensure it contains the required fields (name and email)
   if (!customerData || !customerData.name || !customerData.email) {
     throw new Error("Invalid customer data. Name and email are required.");
   }
 
   try {
+    const data = {
+        name: {
+            first: customerData.name,
+            last: 'NA'
+        },
+        email: customerData.email
+    }
     // Create User
     const response = await fetch(`${process.env.FLW_BASE_URL}/customers`, {
       method: "POST",
@@ -30,9 +38,9 @@ const createCustomer = async (customerData) => {
         "Content-Type": "application/json",
         Accept: "application/json",
         Authorization: `Bearer ${await flutterwaveClient.getToken()}`,
-        "X-Idempotency-Key": customerData.bookingRef,
+        "X-Idempotency-Key": customerData.id,
       },
-      body: JSON.stringify(customerData),
+      body: JSON.stringify(data),
     });
 
     if (!response.ok) {
@@ -42,24 +50,11 @@ const createCustomer = async (customerData) => {
         response.status,
         response.statusText,
       );
-      throw new Error(
-        "Failed to create customer in Flutterwave:" + response.statusText,
-      );
     }
 
-    const data = await response.json();
-    console.log("Customer created in Flutterwave:", data);
-    // Update the 'payment_customer_id' column in the 'bookings' table with the returned customer ID
-    const updateBookings = await prisma.bookings.update({
-      where: { id: customerData.bookingRef },
-      data: { payment_customer_id: data.data.id },
-    });
-
-    console.log(
-      "Updated booking with Flutterwave customer ID:",
-      updateBookings,
-    );
-    return data; // Return created customer object
+    const result = await response.json();
+    console.log("Customer created in Flutterwave:", result);
+    return result; // Return created customer object
   } catch (err) {
     console.log(err)
   }
