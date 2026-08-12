@@ -39,3 +39,6 @@ export const formatDate = (dateString) => {
 
 // 
 export const MENU_HINT = '\n\nReply MENU at any time to start over.';
+
+export const formatPrice = (price) =>
+    new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(price);

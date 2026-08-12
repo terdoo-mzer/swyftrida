@@ -11,6 +11,7 @@ import {
   validateUserSelection,
   MENU_HINT,
   formatDate,
+  formatPrice
 } from "../utils/helpers.js";
 import initiatePayment from "../../src/services/payments/initiatePayment.js";
 
@@ -84,7 +85,7 @@ export const handleMessage = async (from, body) => {
         let formattedAvailableTrips = [];
         availbleTrips.forEach((trip, index) => {
           formattedAvailableTrips.push(
-            `${index + 1}. ${trip.destination} | ${formatDate(trip.departure_time)} | ₦${trip.price}`,
+            `${index + 1}. ${trip.destination} | ${formatDate(trip.departure_time)} | ${formatPrice(trip.price)}`,
           );
         });
 
@@ -192,11 +193,11 @@ export const handleMessage = async (from, body) => {
           });
           initiatePayment({
             bookingRef: booking.newBooking.payment_ref,
-            amount: `₦${session.tripPrice}`, // Need to find a way to write the selected trip amount to the session and pick it for this field
+            amount: session.tripPrice, // Need to find a way to write the selected trip amount to the session and pick it for this field
             customer: booking.user
           });
           console.log(JSON.stringify(session, null, 2));
-          return `Your selected seat ${session.seats[validatedSeatSelection - 1].seat_number} has been reserved for you temporarily.\nPlease wait to recieve an account number to pay the sum of ₦${session.tripPrice} to get your travel ticket.`;
+          return `Your selected seat ${session.seats[validatedSeatSelection - 1].seat_number} has been reserved for you temporarily.\nPlease wait to recieve an account number to pay the sum of ${formatPrice(session.tripPrice)} to get your travel ticket.`;
         } catch (e) {
           if (e.message === "SEAT_TAKEN") {
             // We need to refetech available seats from the DB an rerender since the user selected seat was taken,

@@ -2,17 +2,7 @@ import { prisma } from '../../config/db.js'
 import createCustomer from "./createCustomer.js";
 import createVirtualAccount from "./createVirtualAccount.js";
 import whatsappMessage from "../notifications/whatsappMessage.js";
-
-// const customerData = {
-//     bookingRef: "189a9b33-9c11-425b-9edd-44e49da53e9d",
-//     amount: 50,
-//     phone: '+2348064901390',
-//     name: {
-//         first: "Jin",
-//         last: "Jin"
-//     },
-//     email: "jin@example.com"
-// }
+import { formatPrice } from '../../utils/helpers.js'
 
 const initiatePayment = async ({bookingRef, amount, customer}) => {
   try {
@@ -36,7 +26,7 @@ const initiatePayment = async ({bookingRef, amount, customer}) => {
     });
     // Call outbound Twilio API to send virtual account details to the customer via Whatsapp
 
-    let message = `Please pay the sum of ${amount} naira only to the account below:\nAccount number: ${virtualAccount.data.account_number}\n
+    let message = `Please pay the sum of ${formatPrice(amount)} naira only to the account below:\nAccount number: ${virtualAccount.data.account_number}\n
     Bank Name: ${virtualAccount.data.account_bank_name}\n
     You will be sent a seat reservation ticket after a successful payment.
     Kindly note that this account will be valid only for 30 minutes`;
