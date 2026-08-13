@@ -1,6 +1,8 @@
 // import dotenv from "dotenv";
 import { prisma } from "../../config/db.js";
 import { flutterwaveClient } from "./flutterwaveClient.js";
+import { FlutterwavePaymentPipelineError } from "./errors.js";
+import { PAYMENT_STEP } from "./constants.js";
 
 // dotenv.config();
 /*
@@ -17,20 +19,23 @@ import { flutterwaveClient } from "./flutterwaveClient.js";
  */
 
 const createCustomer = async (customerData) => {
-    console.log(customerData)
-  // validate customerData object to ensure it contains the required fields (name and email)
-  if (!customerData || !customerData.name || !customerData.email) {
-    throw new Error("Invalid customer data. Name and email are required.");
+  if (!customerData || !customerData.email || !customerData.name) {
+    throw new Error(
+      "Flutterwave Customer creation aborted: Missing Customer data",
+      {
+        sourceFunction: PAYMENT_STEP.CREATE_CUSTOMER,
+        isRetryable: false,
+      },
+    );
   }
-
   try {
     const data = {
-        name: {
-            first: customerData.name,
-            last: 'NA'
-        },
-        email: customerData.email
-    }
+      name: {
+        first: customerData.name,
+        last: "NA",
+      },
+      email: customerData.email,
+    };
     // Create User
     const response = await fetch(`${process.env.FLW_BASE_URL}/customers`, {
       method: "POST",
@@ -45,18 +50,25 @@ const createCustomer = async (customerData) => {
 
     if (!response.ok) {
       console.error(
-        "Failed to create customer in Flutterwave:",
+        "Failed to create customer:",
         response,
-        response.status,
-        response.statusText,
       );
+
+      throw new Error(`HTTP ${response.status} - ${response.statusText}`);
     }
 
     const result = await response.json();
     console.log("Customer created in Flutterwave:", result);
     return result; // Return created customer object
   } catch (err) {
-    console.log(err)
+    throw new FlutterwavePaymentPipelineError(
+      "Flutterwave Customer creation API request failed",
+      {
+        isRetryable: true,
+        sourceFunction: PAYMENT_STEP.CREATE_CUSTOMER,
+        cause: err,
+      },
+    );
   }
 };
 

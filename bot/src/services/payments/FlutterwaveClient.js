@@ -1,3 +1,5 @@
+import { FlutterwavePaymentPipelineError } from "./errors.js";
+import { PAYMENT_STEP } from "./constants.js";
 /**
  * This class is responsible for requesting and caching authentication tokens for all
  * downstream API calls to Flutterwave.
@@ -31,24 +33,30 @@ class FlutterwaveClient {
         }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(
-          "Flutterwave authentication token request failed: " +
-            data.error_description,
+        console.error(
+          "Flutterwave OAUTH request failed: No token returned",
+          response
         );
+        throw new Error(`HTTP ${response.status} - ${response.statusText}`);
       }
+
+      const data = await response.json();
 
       this.#accessToken = data.access_token;
       this.#tokenExpiresAt =
         Date.now() +
         (data.expires_in - process.env.TOKEN_EXPIRY_BUFFER_SECONDS) * 1000;
-
-      console.log("Flutterwave: new token generated");
       return this.#accessToken;
     } catch (err) {
-      console.log(err);
+        throw new FlutterwavePaymentPipelineError(
+          "Flutterwave OAUTH token API request failed",
+          {
+            isRetryable: true,
+            sourceFunction: PAYMENT_STEP.OATH_TOKEN_REQUEST,
+            cause: err,
+          },
+        );
     }
   };
 

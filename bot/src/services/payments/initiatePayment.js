@@ -1,13 +1,19 @@
-import { prisma } from '../../config/db.js'
+import { prisma } from "../../config/db.js";
 import createCustomer from "./createCustomer.js";
 import createVirtualAccount from "./createVirtualAccount.js";
 import whatsappMessage from "../notifications/whatsappMessage.js";
-import { formatPrice } from '../../utils/helpers.js'
+import { formatPrice } from "../../utils/helpers.js";
+import { PAYMENT_STEP } from "./constants.js";
 
-const initiatePayment = async ({bookingRef, amount, customer}) => {
+const initiatePayment = async ({
+  bookingId,
+  bookingPaymentRef,
+  amount,
+  customer,
+}) => {
   try {
     let flwCustomerId = customer.payment_customer_id;
-    
+
     // The customer has not been created before
     if (!flwCustomerId) {
       const flwCustomer = await createCustomer(customer);
@@ -20,9 +26,9 @@ const initiatePayment = async ({bookingRef, amount, customer}) => {
 
     // Create Virtual account for the customer
     const virtualAccount = await createVirtualAccount({
-      ref: bookingRef,
+      paymentReference: bookingPaymentRef,
       customerId: flwCustomerId,
-      amount: amount
+      amount: amount,
     });
     // Call outbound Twilio API to send virtual account details to the customer via Whatsapp
 
@@ -32,7 +38,30 @@ const initiatePayment = async ({bookingRef, amount, customer}) => {
     Kindly note that this account will be valid only for 30 minutes`;
     whatsappMessage(customer.phone, message);
   } catch (err) {
-    console.error(err);
+    try {
+      await prisma.payment_events.create({
+        data: {
+          booking_id: bookingId,
+          type: "payment_initiation_failed",
+          status: "failed",
+          payload: {
+            step: err.sourceFunction,
+            message: err.message,
+            stack: err.stack,
+            cause: err.cause?.message,
+          },
+        },
+      });
+
+      await whatsappMessage(
+        customerData.phone,
+        "We're having trouble setting up your payment right now. Please type MENU to cancel and try again.",
+      );
+    } catch (loggingErr) {
+      // last resort — this must never throw
+      console.error("Failed to log/notify payment failure:", loggingErr);
+      console.error("Original payment error was:", err);
+    }
   }
 };
 

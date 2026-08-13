@@ -14,16 +14,19 @@ import {
   formatPrice
 } from "../utils/helpers.js";
 import initiatePayment from "../../src/services/payments/initiatePayment.js";
+import cancelPendingBooking from "./cancelPendingBooking.js";
 
 export const handleMessage = async (from, body) => {
-  // TODO(Terdoo) Check if user wants to return to main menu by sending 'MENU'
+  const session = await getSession(from);
+  // Check if user wants to return to main menu by sending 'MENU'
   if (body.trim().toUpperCase() === "MENU") {
+    if(session?.step === 'AWAITING_PAYMENT' && session?.bookingId) {
+      await cancelPendingBooking(session.bookingId)
+    }
     await clearSession(from);
     // return a welcome back message and ask for origin
     return `Your current session has been cleared.\nReply with Hello to start from the begining.`;
   }
-
-  const session = await getSession(from);
 
   // Check if user has an existing session
   if (session) {
@@ -53,7 +56,7 @@ export const handleMessage = async (from, body) => {
          */
         const validatedOriginSelection = validateUserSelection(body, 2);
         if (!validatedOriginSelection) {
-          return `Hello ${session.name}! Where are you traveling from? Pick the number that applies:\n1.Abuja\n2.Lagos\nMENU_HINT`;
+          return `Hello ${session.name}! Where are you traveling from? Pick the number that applies:\n1.Abuja\n2.Lagos\n${MENU_HINT}`;
         }
         // Create local list of cities
         const cities = ["abuja", "lagos"];
@@ -192,7 +195,8 @@ export const handleMessage = async (from, body) => {
             bookingId: booking.newBooking.id,
           });
           initiatePayment({
-            bookingRef: booking.newBooking.payment_ref,
+            bookingId: booking.newBooking.id,
+            bookingPaymentRef: booking.newBooking.payment_ref,
             amount: session.tripPrice, // Need to find a way to write the selected trip amount to the session and pick it for this field
             customer: booking.user
           });

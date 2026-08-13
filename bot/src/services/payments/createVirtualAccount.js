@@ -1,16 +1,26 @@
 // import dotenv from "dotenv";
 import { error } from "node:console";
 import { flutterwaveClient } from "./FlutterwaveClient.js";
+import { FlutterwavePaymentPipelineError } from "./errors.js";
+import { PAYMENT_STEP } from "./constants.js";
 
 // dotenv.config();
 
-const createVirtualAccount = async ({ref, customerId, amount}) => {
-  if (!ref || !customerId) {
-    throw new Error("Missing reference number and/or customer id");
+const createVirtualAccount = async ({ paymentReference, customerId, amount }) => {
+
+  if (!paymentReference || !customerId) {
+    throw new Error(
+      "Flutterwave virtual account creation aborted: Missing customer Id and/or booking reference",
+      {
+        sourceFunction: PAYMENT_STEP.CREATE_VIRTUAL_ACCOUNT,
+        isRetryable: false,
+      }
+    );
   }
 
+
   const body = {
-    reference: ref,
+    reference: paymentReference,
     customer_id: customerId,
     expiry: process.env.ACCOUNT_EXPIRY, // 15 minutes in seconds
     amount: 1500,
@@ -21,37 +31,31 @@ const createVirtualAccount = async ({ref, customerId, amount}) => {
   };
 
   try {
-    const response = await fetch(
-      `${process.env.FLW_BASE_URL}/virtual-accounts`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${await flutterwaveClient.getToken()}`,
-          "X-Idempotency-Key": ref,
-        },
-        body: JSON.stringify(body),
+    const response = await fetch(`${process.env.FLW_BASE_URL}/virtual-accounts`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${await flutterwaveClient.getToken()}`,
+        "X-Idempotency-Key": paymentReference,
       },
-    );
+      body: JSON.stringify(body),
+    });
     if (!response.ok) {
-      console.error(
-        "Failed to create customer virtual account in Flutterwave:",
-        response,
-        response.status,
-        response.statusText,
-      );
-      throw new Error(
-        "Failed to create customer virtual account in Flutterwave:" +
-          response.statusText,
-      );
+      throw new Error(`HTTP ${response.status} - ${response.statusText}`);
     }
 
     const data = await response.json();
-    console.log("Customer virtual account created in Flutterwave:", data);
-    return data; // Return created virtual account object
+    return data;
   } catch (err) {
-    console.log(err)
+    throw new FlutterwavePaymentPipelineError(
+      "Flutterwave virtual account creation API request failed",
+      {
+        isRetryable: true,
+        sourceFunction: PAYMENT_STEP.CREATE_VIRTUAL_ACCOUNT,
+        cause: err,
+      },
+    );
   }
 };
 
