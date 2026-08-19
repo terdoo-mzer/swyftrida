@@ -1,7 +1,6 @@
 import express from 'express';
 import redis from './config/redis.js';
 import dotenv from 'dotenv';
-import bodyParser from 'body-parser';
 
 import whatsAppRouter from './webhooks/whatsapp.js';
 import paymentRouter from './webhooks/flutterwave.js';
