@@ -36,9 +36,11 @@ const initiatePayment = async ({
     Bank Name: ${virtualAccount.data.account_bank_name}\n
     You will be sent a seat reservation ticket after a successful payment.
     Kindly note that this account will be valid only for 30 minutes`;
-    whatsappMessage(customer.phone, message);
+    // whatsappMessage(customer.phone, message);
+    console.log(customer.phone, message)
   } catch (err) {
     try {
+      console.error(err)
       await prisma.payment_events.create({
         data: {
           booking_id: bookingId,
@@ -53,10 +55,11 @@ const initiatePayment = async ({
         },
       });
 
-      await whatsappMessage(
-        customerData.phone,
-        "We're having trouble setting up your payment right now. Please type MENU to cancel and try again.",
-      );
+      // await whatsappMessage(
+      //   customer.phone,
+      //   "We're having trouble setting up your payment right now. Please type MENU to cancel and try again.",
+      // );
+      console.log("Whatsapp Message: Trouble setting up payments")
     } catch (loggingErr) {
       // last resort — this must never throw
       console.error("Failed to log/notify payment failure:", loggingErr);

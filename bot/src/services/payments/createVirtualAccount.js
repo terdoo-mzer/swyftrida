@@ -23,7 +23,7 @@ const createVirtualAccount = async ({ paymentReference, customerId, amount }) =>
     reference: paymentReference,
     customer_id: customerId,
     expiry: process.env.ACCOUNT_EXPIRY, // 15 minutes in seconds
-    amount: 1500,
+    amount: amount,
     bank_code: process.env.BANK_CODE,
     currency: "NGN",
     account_type: process.env.ACCOUNT_TYPE,
@@ -31,7 +31,7 @@ const createVirtualAccount = async ({ paymentReference, customerId, amount }) =>
   };
 
   try {
-    const response = await fetch(`${process.env.FLW_BASE_URL}/virtual-accounts`, {
+    const response = await fetch("https://f4bexperience.flutterwave.com/virtual-accounts", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -42,10 +42,12 @@ const createVirtualAccount = async ({ paymentReference, customerId, amount }) =>
       body: JSON.stringify(body),
     });
     if (!response.ok) {
+      console.log(response)
       throw new Error(`HTTP ${response.status} - ${response.statusText}`);
     }
 
     const data = await response.json();
+    console.log(data)
     return data;
   } catch (err) {
     throw new FlutterwavePaymentPipelineError(

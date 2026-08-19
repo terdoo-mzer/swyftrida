@@ -1,7 +1,7 @@
 import { prisma } from "../config/db.js";
 
 const cancelPendingBooking = async (bookingId) => {
-  if (!booking) return; // Ensure the function is called with a passed bookingId
+  if (!bookingId) return; // Ensure the function is called with a passed bookingId
   const booking = await prisma.bookings.findUnique({
     where: { id: bookingId },
     select: { seat_id: true },
@@ -9,6 +9,7 @@ const cancelPendingBooking = async (bookingId) => {
 
   if (!booking) return; // nothing to cancel
 
+  // Ensure atomicity here by using `updateMany`. 
   const result = await prisma.bookings.updateMany({
     where: {
       id: bookingId,
