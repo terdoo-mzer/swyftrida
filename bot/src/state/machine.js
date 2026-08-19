@@ -183,6 +183,7 @@ export const handleMessage = async (from, body) => {
                 trip_id: session.tripId,
                 seat_id: session.seats[validatedSeatSelection - 1].id,
                 payment_status: "pending",
+                amount_expected: session.tripPrice,
                 payment_ref: randomUUID(), // Random Hardcoded payment ref to be replaced later with FLW ref
                 expires_at: new Date(Date.now() + 15 * 60 * 1000), // Hold for 15 minutes
               },
