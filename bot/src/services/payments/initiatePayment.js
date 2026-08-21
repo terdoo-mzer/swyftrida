@@ -12,6 +12,7 @@ const initiatePayment = async ({
   customer,
 }) => {
   try {
+    console.log(customer)
     let flwCustomerId = customer.payment_customer_id;
 
     // The customer has not been created before
@@ -36,8 +37,7 @@ const initiatePayment = async ({
     Bank Name: ${virtualAccount.data.account_bank_name}\n
     You will be sent a seat reservation ticket after a successful payment.
     Kindly note that this account will be valid only for 30 minutes`;
-    // whatsappMessage(customer.phone, message);
-    console.log(customer.phone, message)
+    whatsappMessage(customer.phone, message);
   } catch (err) {
     try {
       console.error(err)
@@ -52,14 +52,14 @@ const initiatePayment = async ({
             stack: err.stack,
             cause: err.cause?.message,
           },
+          created_at: new Date()
         },
       });
 
-      // await whatsappMessage(
-      //   customer.phone,
-      //   "We're having trouble setting up your payment right now. Please type MENU to cancel and try again.",
-      // );
-      console.log("Whatsapp Message: Trouble setting up payments")
+      await whatsappMessage(
+        customer.phone,
+        "We're having trouble setting up your payment right now. Please type MENU to cancel and try again.",
+      );
     } catch (loggingErr) {
       // last resort — this must never throw
       console.error("Failed to log/notify payment failure:", loggingErr);

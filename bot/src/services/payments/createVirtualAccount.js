@@ -42,12 +42,10 @@ const createVirtualAccount = async ({ paymentReference, customerId, amount }) =>
       body: JSON.stringify(body),
     });
     if (!response.ok) {
-      console.log(response)
       throw new Error(`HTTP ${response.status} - ${response.statusText}`);
     }
 
     const data = await response.json();
-    console.log(data)
     return data;
   } catch (err) {
     throw new FlutterwavePaymentPipelineError(

@@ -72,6 +72,7 @@ class FlutterwaveClient {
   getToken = async () => {
     if (this.#isTokenValid()) {
       console.log("Flutterwave: using existing token");
+      // return "token generated"
       return this.#accessToken;
     }
     if (this.#pendingTokenRequest) {

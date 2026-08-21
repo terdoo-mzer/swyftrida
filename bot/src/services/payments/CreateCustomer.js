@@ -58,7 +58,6 @@ const createCustomer = async (customerData) => {
     }
 
     const result = await response.json();
-    console.log("Customer created in Flutterwave:", result);
     return result; // Return created customer object
   } catch (err) {
     throw new FlutterwavePaymentPipelineError(
