@@ -3,20 +3,26 @@ import redis from './config/redis.js';
 import dotenv from 'dotenv';
 
 import whatsAppRouter from './webhooks/whatsapp.js';
+import paymentRouter from './webhooks/flutterwave.js';
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
 
+app.use(express.urlencoded({ extended: false }));
 app.use(express.json({
      limit: '10mb',
-    strict: true
+    strict: true,
+    verify : (req, res, buf) => {
+      req.rawBody = buf.toString()
+    }
 }));
-app.use(express.urlencoded({ extended: false }));
 
 // WhatsApp routes
 app.use('/whatsapp', whatsAppRouter);
+// Payment webhook
+app.use('/flutterwave-payment', paymentRouter)
 
 // health check endpoint
 app.get('/health', (req, res) => {
